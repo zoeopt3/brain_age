@@ -1,0 +1,12 @@
+name: eeg-brain-age
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python>=3.10
+  - pyyaml
+  - pandas
+  - pyarrow
+  - pip
+  # Heavy EEG dependencies (mne, scikit-learn, shap, etc.)
+  # will be added in Stage 1 when needed.

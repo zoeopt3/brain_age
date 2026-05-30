@@ -1,0 +1,10 @@
+stage: 0
+name: "setup"
+description: "Project skeleton, config validation, and smoke test"
+
+checks:
+  verify_dirs: true
+  verify_config: true
+  write_manifest: true
+
+output_file: "outputs/stage0_ok.json"

@@ -1,0 +1,19 @@
+project:
+  name: "eeg-brain-age-clock"
+  description: "Explainable age prediction from resting EEG (HBN)"
+  seed: 1337
+
+paths:
+  data_raw: "data/raw"
+  data_interim: "data/interim"
+  data_processed: "data/processed"
+  outputs: "outputs"
+  figures: "outputs/figures"
+  reports: "reports"
+
+dataset:
+  default_dataset_id: "ds004186"
+  bids_root: "data/raw/ds004186"
+
+runtime:
+  log_level: "INFO"

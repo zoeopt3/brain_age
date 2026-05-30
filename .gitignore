@@ -1,0 +1,30 @@
+# Data (large files — never commit raw EEG)
+data/raw/
+data/interim/
+data/processed/
+
+# Outputs (regenerable)
+outputs/
+reports/*.html
+reports/*.pdf
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Environment
+.env
+*.env
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
