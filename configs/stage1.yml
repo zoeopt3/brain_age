@@ -1,0 +1,26 @@
+stage: 1
+name: "download-and-manifest"
+description: "Download a small OpenNeuro subset and build a cohort manifest"
+
+dataset:
+  dataset_id: "ds004186"
+  target_dir: "data/raw/ds004186"
+  n_subjects: 20
+  seed: 1337
+
+download:
+  method: "openneuro-py"
+  include_metadata_only: false
+  metadata_files:
+    - "participants.tsv"
+    - "participants.json"
+    - "dataset_description.json"
+    - "README"
+    - "README.md"
+    - "CHANGES"
+  timeout_seconds: 600
+
+outputs:
+  fingerprint: "outputs/dataset_fingerprint.json"
+  manifest: "outputs/manifest.parquet"
+  sanity_report: "outputs/bids_sanity_report.md"

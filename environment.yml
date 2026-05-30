@@ -6,7 +6,11 @@ dependencies:
   - python>=3.10
   - pyyaml
   - pandas
+  - numpy
+  - scipy
   - pyarrow
+  - mne
+  - mne-bids
   - pip
-  # Heavy EEG dependencies (mne, scikit-learn, shap, etc.)
-  # will be added in Stage 1 when needed.
+  - pip:
+    - openneuro-py

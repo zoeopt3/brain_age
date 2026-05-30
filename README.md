@@ -46,15 +46,26 @@ If you see `"status": "ok"` in the JSON, the skeleton is working.
 
 ---
 
-## Next: Stage 1
+## Stage 1: Download + Manifest
 
-Stage 1 will download a small subset of the HBN dataset and build a participant manifest with age labels. Run:
+Stage 1 downloads a small subset of the HBN dataset (default 20 subjects) and builds a participant manifest with age labels.
 
 ```bash
-python scripts/stage1_download.py --config configs/project.yml
+# 1. Download subset (requires internet)
+python scripts/stage1_download_subset.py --config configs/stage1.yml
+
+# 2. Build manifest and sanity report
+python scripts/stage1_build_manifest.py --config configs/stage1.yml
+
+# 3. Check outputs
+cat outputs/dataset_fingerprint.json
+cat outputs/bids_sanity_report.md
 ```
 
-*(Script will be created in Stage 1.)*
+**Expected outputs:**
+- `outputs/dataset_fingerprint.json` — dataset ID, download timestamp, config hash
+- `outputs/manifest.parquet` — participant_id, age, condition (EO/EC), file paths
+- `outputs/bids_sanity_report.md` — counts, missingness, duplicates, TSV/folder mismatches
 
 ---
 
