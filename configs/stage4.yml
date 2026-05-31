@@ -1,0 +1,54 @@
+stage: 4
+name: "modeling"
+description: "Train and evaluate age-prediction models with leakage-safe CV"
+
+input:
+  features_path: "outputs/features.parquet"
+
+target:
+  column: "age"
+
+groups:
+  column: "sub"   # group by participant for leakage-safe splits
+
+filtering:
+  drop_na_target: true
+  exclude_conditions: []
+  min_rows: 30
+
+cv:
+  n_splits: 5
+  random_seed: 1337
+
+preprocessing:
+  # Columns matching these prefixes are excluded from features
+  exclude_columns: ["sub", "ses", "task", "run", "condition", "age", "sex",
+                     "psd_ok", "specparam_ok", "participant_id"]
+  numeric_imputer: "median"
+  scale_numeric: true
+
+models:
+  baseline_mean:
+    enabled: true
+  ridge:
+    enabled: true
+    alphas: [0.01, 0.1, 1.0, 10.0, 100.0]
+  elasticnet:
+    enabled: false
+    alphas: [0.01, 0.1, 1.0, 10.0]
+    l1_ratio: [0.1, 0.5, 0.9]
+  hgb:
+    enabled: true
+    params:
+      max_depth: 3
+      learning_rate: 0.05
+      max_iter: 500
+      l2_regularization: 1.0
+      min_samples_leaf: 5
+
+output:
+  model_results_path: "outputs/model_results.json"
+  cv_predictions_path: "outputs/cv_predictions.parquet"
+  figures_dir: "outputs/figures/model"
+  models_dir: "outputs/models"
+  save_models: true

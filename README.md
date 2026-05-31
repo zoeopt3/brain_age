@@ -113,6 +113,32 @@ python scripts/stage3_extract_features.py --config configs/stage3.yml
 
 ---
 
+## Stage 4: Modeling
+
+Stage 4 trains age-prediction models using leakage-safe GroupKFold cross-validation (grouped by participant so EO/EC recordings from the same person stay together).
+
+```bash
+python scripts/stage4_train_models.py --config configs/stage4.yml
+```
+
+**Expected outputs:**
+- `outputs/model_results.json` — per-fold MAE/R², model comparison, metadata
+- `outputs/cv_predictions.parquet` — per-row predictions with fold ID
+- `outputs/figures/model/` — calibration scatter, residual plot, error histogram, model comparison bar chart
+- `outputs/models/` — serialized best model pipeline (joblib)
+
+**Models trained:**
+- Baseline (mean age)
+- RidgeCV (linear, standardized)
+- HistGradientBoostingRegressor (nonlinear, regularized)
+
+**Common pitfalls:**
+- *Leakage:* Multiple recordings per participant must stay in the same fold. GroupKFold handles this.
+- *Small N:* With 20 participants, CV variance will be high. Interpret results cautiously.
+- *Narrow age range:* This prototype dataset spans ages 18-22; a wider range (e.g. HBN 5-21) will produce more meaningful models.
+
+---
+
 ## Repo Structure
 
 ```
