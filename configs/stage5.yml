@@ -1,0 +1,65 @@
+stage: 5
+name: "explainability"
+description: "Permutation importance, SHAP, and feature ablation studies"
+
+input:
+  features_path: "outputs/features.parquet"
+  cv_predictions_path: "outputs/cv_predictions.parquet"
+  model_results_path: "outputs/model_results.json"
+  models_dir: "outputs/models"
+
+target:
+  column: "age"
+
+groups:
+  column: "sub"
+
+preprocessing:
+  exclude_columns: ["sub", "ses", "task", "run", "condition", "age", "sex",
+                     "psd_ok", "specparam_ok", "participant_id"]
+  numeric_imputer: "median"
+  scale_numeric: true
+
+model_selection:
+  choose: "best_by_mae"
+  fallback_model_name: "ridge"
+  # Exclude baseline_mean from "best" selection for explainability
+  exclude_from_best: ["baseline_mean"]
+
+cv:
+  n_splits: 5
+  random_seed: 1337
+
+explainability:
+  permutation:
+    enabled: true
+    n_repeats: 10
+    scoring: "neg_mean_absolute_error"
+    max_features: 200
+  shap:
+    enabled: true
+    max_samples: 500
+    background_samples: 100
+
+feature_groups:
+  paf_keywords: ["paf", "iaf", "peak_alpha", "alpha_peak"]
+  aperiodic_keywords: ["ap_exponent", "ap_offset"]
+  fixed_alpha_keywords: ["_bp_alpha"]
+  individualized_alpha_keywords: ["iaf_bandpower"]
+
+ablations:
+  enabled: true
+  experiments:
+    - name: "full_model"
+      drop_group: null
+    - name: "remove_paf"
+      drop_group: "paf"
+    - name: "remove_aperiodic"
+      drop_group: "aperiodic"
+    - name: "remove_paf_and_aperiodic"
+      drop_groups: ["paf", "aperiodic"]
+
+output:
+  out_dir: "outputs/explainability"
+  figures_dir: "outputs/figures/explain"
+  notes_path: "reports/explainability_notes.md"

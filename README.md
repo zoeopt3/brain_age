@@ -139,6 +139,29 @@ python scripts/stage4_train_models.py --config configs/stage4.yml
 
 ---
 
+## Stage 5: Explainability + Ablations
+
+Stage 5 identifies which EEG features drive age predictions and tests how performance changes when specific feature families are removed.
+
+```bash
+python scripts/stage5_explain_and_ablations.py --config configs/stage5.yml
+```
+
+**Expected outputs:**
+- `outputs/explainability/global_importance.parquet` — permutation importance per feature
+- `outputs/explainability/ablation_results.json` — MAE under each ablation condition
+- `outputs/explainability/shap_values.parquet` — SHAP values (if shap installed)
+- `outputs/figures/explain/` — importance bar chart, ablation comparison, SHAP summary
+- `reports/explainability_notes.md` — narrative connecting top features to EEG development
+
+**Ablation experiments:**
+- Full model (baseline)
+- Remove PAF/IAF features
+- Remove aperiodic (1/f) features
+- Remove both PAF and aperiodic
+
+---
+
 ## Repo Structure
 
 ```
