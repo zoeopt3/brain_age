@@ -69,6 +69,27 @@ cat outputs/bids_sanity_report.md
 
 ---
 
+## Stage 2: QC + Preprocessing
+
+Stage 2 loads each EEG recording from the manifest, applies minimal preprocessing (bandpass 1-40 Hz, 60 Hz notch, average reference), rejects artifacts, and computes QC metrics.
+
+```bash
+python scripts/stage2_run_qc.py --config configs/stage2.yml
+```
+
+**Expected outputs:**
+- `outputs/qc_summary.parquet` — per-recording QC metrics (duration, rejection rate, noise proxies, band powers)
+- `outputs/drop_log.jsonl` — recordings that failed or were flagged, with reason codes
+- `outputs/qc_report.md` — human-readable summary of QC results
+- `outputs/qc_figures/` — distribution plots (usable duration, rejection fraction, line noise, muscle artifact)
+
+**Troubleshooting:**
+- *Missing montage/channel names:* MNE may warn about unrecognized channels. The pipeline picks EEG channels by type and falls back to prefix matching for posterior channels.
+- *Memory issues:* Each recording is loaded, processed, and released one at a time. No large intermediates are kept in memory.
+- *High rejection rates:* Review `outputs/qc_report.md` for recommended thresholds. Consider adjusting `peak_to_peak_uV` in `configs/stage2.yml`.
+
+---
+
 ## Repo Structure
 
 ```

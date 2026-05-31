@@ -1,0 +1,42 @@
+stage: 2
+name: "qc-preprocessing"
+description: "Lightweight QC metrics and minimal preprocessing"
+
+dataset:
+  bids_root: "data/raw/ds004186"
+
+input:
+  manifest_path: "outputs/manifest.parquet"
+
+preprocessing:
+  l_freq: 1.0               # high-pass (Hz)
+  h_freq: 40.0              # low-pass (Hz)
+  notch_freqs: [60.0]       # line-noise notch; use [50.0] outside North America
+  reref: "average"           # "average" or "REST"; average is safest default
+  resample_hz: null          # null = keep original srate; set e.g. 256 to downsample
+  epoch_length_sec: 2.0      # segment length for artifact rejection & PSD
+  reject:
+    enabled: true
+    peak_to_peak_uV: 200.0   # reject epochs where any channel exceeds this p2p (microvolts)
+    flat_uV: 1.0             # reject epochs where any channel is flatter than this (microvolts)
+    min_good_duration_sec: 60 # recordings with less usable data are flagged
+
+qc:
+  compute_psd: true
+  psd_fmin: 1.0
+  psd_fmax: 45.0
+  line_noise_center_hz: 60.0
+  line_noise_band_hz: 2.0
+  muscle_band_hz: [30.0, 45.0]
+  alpha_band_hz: [8.0, 13.0]
+  posterior_channels: ["O1", "O2", "Oz", "POz", "Pz"]
+
+output:
+  qc_summary_path: "outputs/qc_summary.parquet"
+  drop_log_path: "outputs/drop_log.jsonl"
+  qc_report_path: "outputs/qc_report.md"
+  figures_dir: "outputs/qc_figures"
+  save_cleaned:
+    enabled: false
+    format: "fif"
+    dir: "data/interim/cleaned"
