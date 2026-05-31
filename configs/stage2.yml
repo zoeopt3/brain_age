@@ -3,7 +3,7 @@ name: "qc-preprocessing"
 description: "Lightweight QC metrics and minimal preprocessing"
 
 dataset:
-  bids_root: "data/raw/ds004186"
+  bids_root: "data/raw/ds004148"
 
 input:
   manifest_path: "outputs/manifest.parquet"

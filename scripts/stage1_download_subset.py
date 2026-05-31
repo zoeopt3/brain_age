@@ -30,14 +30,18 @@ from src.pipeline.io import ensure_dirs, write_json, read_tsv
 from src.pipeline.logging_utils import get_logger, log_environment_info
 
 
-def _check_openneuro_cli() -> bool:
-    """Return True if the ``openneuro-py`` CLI is available."""
-    return shutil.which("openneuro-py") is not None
+def _check_openneuro() -> bool:
+    """Return True if the ``openneuro`` Python package is importable."""
+    try:
+        import openneuro
+        return True
+    except ImportError:
+        return False
 
 
 def _run_openneuro(args: list[str], logger) -> bool:
-    """Run an openneuro-py command, streaming output. Returns success."""
-    cmd = ["openneuro-py"] + args
+    """Run an openneuro-py command via ``python -m openneuro``, streaming output."""
+    cmd = [sys.executable, "-m", "openneuro"] + args
     logger.info("Running: %s", " ".join(cmd))
     try:
         proc = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
@@ -52,7 +56,7 @@ def _run_openneuro(args: list[str], logger) -> bool:
             return False
         return True
     except FileNotFoundError:
-        logger.error("openneuro-py not found on PATH")
+        logger.error("python -m openneuro not found")
         return False
     except subprocess.TimeoutExpired:
         logger.error("openneuro-py timed out")
@@ -69,7 +73,7 @@ def download_metadata(dataset_id: str, target_dir: Path,
         include_args.extend(["--include", mf])
 
     return _run_openneuro(
-        ["download", "--dataset", dataset_id, "--target_dir", str(target_dir)]
+        ["download", "--dataset", dataset_id, "--target-dir", str(target_dir)]
         + include_args,
         logger,
     )
@@ -113,7 +117,7 @@ def download_subjects(dataset_id: str, target_dir: Path,
         logger.info("[%d/%d] Downloading %s ...", i, len(subject_ids), sub_folder)
         ok = _run_openneuro(
             ["download", "--dataset", dataset_id,
-             "--target_dir", str(target_dir),
+             "--target-dir", str(target_dir),
              "--include", f"{sub_folder}/*"],
             logger,
         )
@@ -141,9 +145,9 @@ def main() -> None:
     log_environment_info(logger)
 
     # Check openneuro-py
-    if not _check_openneuro_cli():
+    if not _check_openneuro():
         logger.error("")
-        logger.error("openneuro-py is not installed or not on PATH.")
+        logger.error("openneuro-py is not installed.")
         logger.error("Install it with:")
         logger.error("  pip install openneuro-py")
         logger.error("")

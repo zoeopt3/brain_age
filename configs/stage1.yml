@@ -3,8 +3,8 @@ name: "download-and-manifest"
 description: "Download a small OpenNeuro subset and build a cohort manifest"
 
 dataset:
-  dataset_id: "ds004186"
-  target_dir: "data/raw/ds004186"
+  dataset_id: "ds004148"
+  target_dir: "data/raw/ds004148"
   n_subjects: 20
   seed: 1337
 
