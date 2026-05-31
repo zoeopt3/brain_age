@@ -1,0 +1,71 @@
+stage: 3
+name: "feature-extraction"
+description: "Spectral, band-power, PAF, and aperiodic features from QC-passed EEG"
+
+dataset:
+  bids_root: "data/raw/ds004148"
+
+input:
+  manifest_path: "outputs/manifest.parquet"
+  qc_summary_path: "outputs/qc_summary.parquet"
+
+inclusion:
+  min_usable_duration_sec: 60
+  max_rejection_fraction: 0.5
+
+preprocessing:
+  l_freq: 1.0
+  h_freq: 40.0
+  notch_freqs: [60.0]
+  reref: "average"
+  resample_hz: null
+  epoch_length_sec: 2.0
+  reject:
+    enabled: true
+    peak_to_peak_uV: 200.0
+    flat_uV: 1.0
+
+psd:
+  method: "welch"
+  fmin: 1.0
+  fmax: 45.0
+  n_fft: null
+  n_per_seg_sec: 2.0
+  overlap_frac: 0.5
+  average: "median"
+
+bands:
+  delta: [1.0, 4.0]
+  theta: [4.0, 8.0]
+  alpha: [8.0, 12.0]
+  beta:  [13.0, 30.0]
+
+paf:
+  search_range_hz: [6.0, 13.0]
+  individualized_half_width_hz: 2.0
+  clip_range_hz: [4.0, 14.0]
+  posterior_priority_prefixes: ["O", "PO", "P"]
+  fallback_min_channels: 3
+
+aperiodic:
+  enabled: true
+  fit_range_hz: [2.0, 40.0]
+  max_n_peaks: 6
+  peak_width_limits: [1.0, 8.0]
+  min_peak_height: 0.1
+
+regions:
+  enabled: true
+  definitions:
+    frontal_prefixes: ["F", "AF"]
+    central_prefixes: ["C"]
+    parietal_prefixes: ["P", "CP"]
+    occipital_prefixes: ["O", "PO"]
+    temporal_prefixes: ["T", "FT", "TP"]
+
+output:
+  features_path: "outputs/features.parquet"
+  feature_qc_path: "outputs/feature_qc.parquet"
+  feature_dict_path: "reports/feature_dictionary.md"
+  figures_dir: "outputs/figures/features"
+  log_transform_bandpower: true

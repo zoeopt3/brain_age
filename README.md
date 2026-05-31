@@ -90,6 +90,29 @@ python scripts/stage2_run_qc.py --config configs/stage2.yml
 
 ---
 
+## Stage 3: Feature Extraction
+
+Stage 3 extracts spectral features from QC-passed recordings: band powers, peak alpha frequency, individualized alpha power, and aperiodic (1/f) parameters.
+
+```bash
+python scripts/stage3_extract_features.py --config configs/stage3.yml
+```
+
+**Expected outputs:**
+- `outputs/features.parquet` — single-row-per-recording feature table for modeling
+- `outputs/feature_qc.parquet` — fit success/failure flags per recording
+- `reports/feature_dictionary.md` — plain-language description of each feature
+- `outputs/figures/features/` — age vs PAF scatter, band power boxplots, aperiodic distributions
+
+**Key features extracted:**
+- Global and regional band powers (delta, theta, alpha, beta) in log10(V^2)
+- Peak alpha frequency (PAF) from posterior channels
+- Individualized alpha power (PAF +/- 2 Hz)
+- Aperiodic exponent and offset via specparam
+- Theta/alpha and theta/beta ratios
+
+---
+
 ## Repo Structure
 
 ```
