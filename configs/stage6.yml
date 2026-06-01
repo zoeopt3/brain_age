@@ -1,0 +1,57 @@
+stage: 6
+name: "robustness-and-report"
+description: "Robustness checks, final report, and release bundle"
+
+input:
+  features_path: "outputs/features.parquet"
+  model_results_path: "outputs/model_results.json"
+  qc_report_path: "outputs/qc_report.md"
+  dataset_fingerprint_path: "outputs/dataset_fingerprint.json"
+  explainability_dir: "outputs/explainability"
+  figures_dirs:
+    model: "outputs/figures/model"
+    explain: "outputs/figures/explain"
+    features: "outputs/figures/features"
+    qc: "outputs/qc_figures"
+
+preprocessing:
+  exclude_columns: ["sub", "ses", "task", "run", "condition", "age", "sex",
+                     "psd_ok", "specparam_ok", "participant_id"]
+  numeric_imputer: "median"
+  scale_numeric: true
+
+groups:
+  column: "sub"
+
+target:
+  column: "age"
+
+robustness:
+  enabled_checks: ["eo_vs_ec", "feature_family_sensitivity"]
+  cv:
+    n_splits: 5
+    random_seed: 1337
+  model_name_override: null   # null = auto-select best non-baseline from model_results
+  feature_families:
+    periodic_keywords: ["_bp_", "paf", "iaf", "alpha_peak", "theta_alpha", "theta_beta"]
+    aperiodic_keywords: ["ap_exponent", "ap_offset"]
+
+report:
+  output_path: "reports/final_report.md"
+  title: "Explainable EEG Brain-Age Clock"
+  audience: "high_school"
+
+release:
+  out_dir: "outputs/release"
+  bundle_name: "eeg_brain_age_release_bundle.zip"
+  include_paths:
+    - "reports/final_report.md"
+    - "reports/feature_dictionary.md"
+    - "reports/explainability_notes.md"
+    - "outputs/model_results.json"
+    - "outputs/cv_predictions.parquet"
+    - "outputs/features.parquet"
+    - "outputs/qc_summary.parquet"
+    - "outputs/robustness/robustness_results.json"
+    - "outputs/figures"
+    - "configs"

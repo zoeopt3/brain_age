@@ -162,6 +162,26 @@ python scripts/stage5_explain_and_ablations.py --config configs/stage5.yml
 
 ---
 
+## Stage 6: Robustness + Report + Release
+
+Stage 6 runs robustness checks, generates a beginner-friendly final report, and packages everything into a release bundle.
+
+```bash
+python scripts/stage6_robustness_and_report.py --config configs/stage6.yml
+```
+
+**Expected outputs:**
+- `outputs/robustness/robustness_results.json` — EO/EC comparison and feature family sensitivity
+- `outputs/figures/robustness/` — comparison plots
+- `reports/final_report.md` — complete project summary (accessible to a high school student)
+- `outputs/release/eeg_brain_age_release_bundle.zip` — shareable bundle with all key outputs
+
+**Robustness checks (configurable in `configs/stage6.yml`):**
+- *EO vs EC:* Are results consistent across eyes-open and eyes-closed conditions?
+- *Feature family sensitivity:* How does performance change with only periodic, only aperiodic, or combined features?
+
+---
+
 ## Repo Structure
 
 ```
