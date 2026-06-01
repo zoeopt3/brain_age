@@ -1,0 +1,232 @@
+\documentclass[12pt, a4paper]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{amsmath, amssymb}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{hyperref}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{natbib}
+\usepackage{xcolor}
+\usepackage{float}
+
+\bibliographystyle{plainnat}
+
+\newcommand{\tbd}[1]{\textcolor{red}{\textbf{[TBD: #1]}}}
+
+\title{Explainable EEG ``Brain-Age Clock'' in Childhood--Adolescence\\Using Healthy Brain Network Data\\[0.5em]\large Pilot Study}
+\author{Zoe Research Team}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+Electroencephalography (EEG) provides a non-invasive window into brain maturation, yet most EEG-based age-prediction studies treat the model as a black box or conflate periodic (oscillatory) and aperiodic (1/$f$ background) spectral components.
+We present a reproducible, open-source pipeline for building an explainable ``brain-age clock'' from resting-state EEG, with explicit separation of periodic band powers, peak alpha frequency (PAF), individualized alpha power, and aperiodic spectral parameters via spectral parameterization (specparam).
+In this pilot study, we demonstrate the full pipeline on a 20-participant subset of a public OpenNeuro dataset (ds004148, ages 18--22), extracting 34 spectral features per recording and evaluating age prediction with leakage-safe cross-validation.
+Pilot results show that the narrow age range limits predictive performance (best MAE = 1.01 years, baseline), but the pipeline successfully extracts physiologically meaningful features (mean PAF = 10.2~Hz, aperiodic exponent = 0.91) and identifies parietal theta power as the most informative feature.
+We describe plans for scaling to the full Healthy Brain Network dataset (ages 5--21, $N > 2{,}000$) where developmental EEG trajectories are expected to provide substantially greater predictive signal.
+\end{abstract}
+
+\vspace{1em}
+\noindent\textbf{Guardrails:} This work is strictly for research and education. The pipeline outputs are not diagnostic tools, clinical decision-support systems, or validated biomarkers. Model predictions have not been clinically validated.
+
+\section{Introduction}
+
+The human brain undergoes profound structural and functional changes from childhood through adolescence. These maturational processes---including synaptic pruning, myelination, and the refinement of cortical circuits---produce measurable changes in the brain's electrical activity that can be captured non-invasively through electroencephalography (EEG).
+
+EEG signals can be decomposed into spectral components reflecting distinct neural processes. Oscillatory (``periodic'') components, such as the alpha rhythm ($\sim$8--13~Hz), arise from synchronized neural populations and reflect thalamocortical circuit function. The frequency at which alpha power peaks---the peak alpha frequency (PAF)---increases systematically during childhood and adolescence, from roughly 6--8~Hz in early childhood to 9--11~Hz in late adolescence \citep{miskovic2015development, cellier2021alpha}.
+
+However, the EEG power spectrum also contains a broadband, aperiodic ``1/$f$-like'' background whose slope (exponent) and level (offset) change with development: younger children show steeper spectral slopes that flatten during adolescence \citep{donoghue2020specparam, ostlund2022specparam}. If periodic and aperiodic components are not separated, apparent changes in ``alpha power'' may actually reflect shifts in the aperiodic background.
+
+The specparam algorithm \citep{donoghue2020specparam} enables explicit decomposition of the power spectrum into periodic peaks and aperiodic background. Applying this decomposition to developmental EEG offers more physiologically precise features and more interpretable age-prediction models.
+
+In this pilot study, we present a complete, reproducible pipeline for building an explainable EEG brain-age clock with explicit periodic/aperiodic separation. We demonstrate it on a small dataset and describe plans for scaling to the Healthy Brain Network (HBN).
+
+\section{Related Work}
+
+\subsection{EEG-BIDS and Reproducible Research}
+The Brain Imaging Data Structure for EEG (EEG-BIDS; \citealt{pernet2019eegbids}) standardizes how EEG data are organized, enabling reproducible large-scale analyses. The OpenNeuro platform \citep{markiewicz2021openneuro} hosts BIDS-formatted datasets. Our pipeline uses MNE-BIDS \citep{appelhoff2019mnebids} to read data directly from the BIDS layout.
+
+\subsection{The Healthy Brain Network}
+The Healthy Brain Network (HBN; \citealt{alexander2017hbn}) includes EEG recordings from children and adolescents aged approximately 5--21, providing one of the largest publicly available pediatric EEG resources.
+
+\subsection{Developmental EEG Trajectories}
+PAF increases from $\sim$6--8~Hz in early childhood to 9--11~Hz by late adolescence \citep{miskovic2015development, cellier2021alpha}. Delta and theta power decrease with age \citep{clarke2001age, whitford2007maturation}. The aperiodic exponent flattens during development \citep{ostlund2022specparam}.
+
+\subsection{Spectral Parameterization}
+The specparam algorithm \citep{donoghue2020specparam} models the power spectrum as the sum of an aperiodic component and Gaussian peaks, enabling separate analysis of oscillatory and background contributions.
+
+\subsection{EEG-Based Brain-Age Models}
+Brain-age prediction from EEG has been demonstrated in adults \citep{engemann2022brainage, sun2019brainage}, but most prior work has focused on adult populations, used the model as a black box, or did not explicitly separate periodic and aperiodic components.
+
+\section{Data}
+
+\subsection{Pilot Dataset}
+We used a publicly available resting-state EEG dataset (OpenNeuro ds004148), comprising recordings from healthy adults with eyes-open (EO) and eyes-closed (EC) conditions across multiple sessions. We downloaded data from 20 participants (seeded random sample), yielding 120 EEG recordings. Participants ranged in age from 18 to 22 years (mean = 19.8).
+
+\textbf{Note:} The intended target is the HBN dataset (ds004186, ages 5--21). The pilot dataset was used because ds004186 requires authentication. \tbd{run on full HBN dataset}
+
+\subsection{Ethics}
+All data are publicly available, de-identified, and obtained under OpenNeuro data use agreements. This project is strictly for research and education purposes.
+
+\section{Methods}
+
+\subsection{Quality Control and Preprocessing}
+Minimal preprocessing was applied: bandpass filter (1--40~Hz), notch filter (60~Hz), common average re-reference, 2-second epoching, and amplitude-based artifact rejection (peak-to-peak $>$~200~$\mu$V or flatline $<$~1~$\mu$V).
+
+\subsection{Feature Engineering}
+From each cleaned recording, 34 spectral features were extracted in four families:
+
+\begin{itemize}
+    \item \textbf{Band powers (24):} Global and regional (frontal, central, parietal, occipital, temporal) log$_{10}$ absolute power in delta (1--4~Hz), theta (4--8~Hz), alpha (8--12~Hz), and beta (13--30~Hz).
+    \item \textbf{PAF and individualized alpha (4):} Peak alpha frequency from posterior channels (6--13~Hz search range), individualized alpha power (PAF~$\pm$~2~Hz), and specparam alpha peak parameters.
+    \item \textbf{Aperiodic (2):} Exponent and offset from specparam fit (2--40~Hz range).
+    \item \textbf{Ratios (2):} Theta/alpha and theta/beta power ratios.
+\end{itemize}
+
+\subsection{Modeling}
+Three models were evaluated: baseline (mean), RidgeCV, and HistGradientBoosting. GroupKFold CV ($K=5$) grouped by participant ID prevented data leakage.
+
+\subsection{Explainability}
+Permutation importance was computed on held-out folds. Ablation experiments removed PAF, aperiodic, or both feature groups.
+
+\section{Results (Pilot)}
+
+\subsection{Cohort Flow}
+
+\begin{table}[H]
+\centering
+\caption{Pilot cohort flow}
+\begin{tabular}{lr}
+\toprule
+Stage & Recordings \\
+\midrule
+Downloaded & 120 \\
+Passed QC & 120 (100\%) \\
+Feature extraction & 118 (98.3\%) \\
+Included in modeling & 118 \\
+\bottomrule
+\end{tabular}
+\label{tab:cohort}
+\end{table}
+
+\subsection{Model Performance}
+
+\begin{table}[H]
+\centering
+\caption{Pilot model performance (5-fold GroupKFold CV)}
+\begin{tabular}{lcc}
+\toprule
+Model & MAE (years) & $R^2$ \\
+\midrule
+Baseline (mean) & 1.01 $\pm$ 0.43 & $-$0.115 $\pm$ 0.060 \\
+RidgeCV & 1.25 $\pm$ 0.42 & $-$0.997 $\pm$ 0.610 \\
+HGB & 1.12 $\pm$ 0.48 & $-$0.589 $\pm$ 0.310 \\
+\bottomrule
+\end{tabular}
+\label{tab:performance}
+\end{table}
+
+All $R^2$ values are negative, indicating that no model outperformed predicting the mean---expected given the 4-year age range.
+
+\subsection{Feature Importance}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.9\textwidth]{figures/fig5_importance.png}
+\caption{Top 20 features by permutation importance (HGB model). Parietal theta power dominates.}
+\label{fig:importance}
+\end{figure}
+
+\subsection{Feature Distributions}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+\includegraphics[width=\textwidth]{figures/fig3_age_vs_paf.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+\includegraphics[width=\textwidth]{figures/fig3_aperiodic_hist.png}
+\end{minipage}
+\caption{Left: Age vs.\ peak alpha frequency (pilot). Right: Aperiodic exponent distribution. Mean PAF = 10.2~Hz; mean exponent = 0.91.}
+\label{fig:features}
+\end{figure}
+
+\subsection{Ablation Results}
+
+\begin{table}[H]
+\centering
+\caption{Ablation study (HGB model, pilot data)}
+\begin{tabular}{lcc}
+\toprule
+Experiment & MAE (years) & Features \\
+\midrule
+Full model & 1.12 & 34 \\
+Remove PAF/IAF & 1.13 & 30 \\
+Remove aperiodic & 1.15 & 32 \\
+Remove both & 1.10 & 28 \\
+\bottomrule
+\end{tabular}
+\label{tab:ablation}
+\end{table}
+
+\subsection{Predicted vs.\ True Age}
+
+\begin{figure}[H]
+\centering
+\begin{minipage}{0.48\textwidth}
+\includegraphics[width=\textwidth]{figures/fig4_pred_vs_true.png}
+\end{minipage}
+\hfill
+\begin{minipage}{0.48\textwidth}
+\includegraphics[width=\textwidth]{figures/fig4_residuals.png}
+\end{minipage}
+\caption{Left: Predicted vs.\ true age (HGB, CV predictions). Right: Residuals vs.\ age.}
+\label{fig:calibration}
+\end{figure}
+
+\section{Discussion}
+
+The pilot results confirm that the pipeline operates correctly end-to-end. However, the narrow age range (18--22) fundamentally limits developmental signal. Parietal theta power emerged as the most important feature, likely reflecting individual differences in attentional state rather than maturation. Ablation differences were minimal ($\leq$0.03 years).
+
+We expect that applying this pipeline to the full HBN dataset (ages 5--21) will reveal increasing PAF, flattening aperiodic slopes, and shifting regional power distributions, providing substantially more predictive signal.
+
+\section{Limitations}
+
+\begin{enumerate}
+    \item \textbf{Narrow age range:} The pilot spans only 18--22 years, far narrower than the target 5--21.
+    \item \textbf{Small sample:} 20 participants yield high CV variance.
+    \item \textbf{Proxy dataset:} ds004148 differs from the target HBN dataset.
+    \item \textbf{No ICA:} Only amplitude-based artifact rejection was applied.
+    \item \textbf{Not diagnostic:} This pipeline is a research tool; it has not been clinically validated.
+\end{enumerate}
+
+\section{Next Steps}
+
+\tbd{Obtain OpenNeuro authentication for ds004186 (HBN). Target: $N > 500$ participants, ages 5--21.}
+
+Key upgrades for the full study:
+\begin{itemize}
+    \item Apply pipeline to full HBN dataset across the developmental age range
+    \item Compare EO-only, EC-only, and combined models
+    \item Test preprocessing sensitivity (filter bounds, reference choice)
+    \item Add external validation on a second dataset
+\end{itemize}
+
+\section{Reproducibility}
+
+\begin{itemize}
+    \item Dataset: OpenNeuro ds004148 (pilot), ds004186 (target)
+    \item Random seed: 1337
+    \item Software: Python 3.13, MNE 1.12, scikit-learn 1.7, specparam
+    \item All stages are scripted and config-driven; re-run stages 0--6 sequentially
+\end{itemize}
+
+\bibliography{references}
+
+\end{document}
